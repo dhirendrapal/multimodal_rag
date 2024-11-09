@@ -1,0 +1,8 @@
+streamlit==1.39.0
+fitz==0.0.1.dev2
+PyMuPDF==1.24.12
+openai==1.54.3
+langchain-community==0.3.5
+langchain-openai==0.2.6
+opencv-python==4.10.0.84
+matplotlib==3.9.2
