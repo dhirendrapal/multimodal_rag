@@ -2,8 +2,9 @@
 import re
 import os
 import cv2
+import json
 import matplotlib.pyplot as plt
-
+import streamlit as st
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
@@ -62,13 +63,57 @@ def ask_question_with_images(question, index_path="data/embeddings/faiss_index",
     # Extract answer and page content
     answer = result["result"]
     page_content = result["source_documents"][0].page_content
-    page_number = result["source_documents"][0].metadata.get("page_number", "N/A")
+    page_number = result["source_documents"][0].metadata.get("page", "N/A")
+    page_source = os.path.basename(result["source_documents"][0].metadata.get("source"))
+    doc_img_src = page_source.split(".")[0]
+
+    save_json(result)
 
     # Extract and display image references
     image_references = extract_image_references(page_content)
     for image_file in image_references:
-        image_path = os.path.join(image_folder, image_file)
+        image_path = os.path.join(image_folder, doc_img_src, image_file)
         print(f"Displaying {image_file}...")
         display_image(image_path)
 
-    return answer, page_number, image_references
+    return answer, page_number, page_source, image_references
+
+
+def save_json(data, directory="data/responses"):
+    def make_serializable(obj):
+        """
+        Convert non-serializable objects to serializable formats.
+        """
+        if isinstance(obj, dict):
+            return {key: make_serializable(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [make_serializable(item) for item in obj]
+        elif hasattr(obj, "__dict__"):  # For objects with a __dict__ attribute
+            return make_serializable(obj.__dict__)
+        else:
+            return obj  # Return as-is if it is serializable
+
+    # Convert the data to a serializable format
+    serializable_data = make_serializable(data)
+
+    # Get all files in the directory
+    files = [f for f in os.listdir(directory) if f.startswith("response_") and f.endswith(".json")]
+
+    # Extract numbers from file names
+    numbers = []
+    for file in files:
+        try:
+            number = int(file.split('_')[1].split('.')[0])
+            numbers.append(number)
+        except (IndexError, ValueError):
+            continue
+
+    # Determine the next available number
+    next_number = max(numbers, default=0) + 1
+    filename = f"response_{next_number}.json"
+
+    # Save data to the JSON file
+    filepath = os.path.join(directory, filename)
+    with open(filepath, "w") as json_file:
+        json.dump(serializable_data, json_file, indent=4)
+

@@ -8,16 +8,16 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "../../data/saved_docume
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def save_uploaded_file(uploaded_file):
-    """
-    Save the uploaded file to the specified upload folder.
+    # Step 1: Transform the file name
+    original_file_name = uploaded_file.name
+    file_name, file_extension = os.path.splitext(original_file_name)
+    transformed_file_name = file_name.lower().replace(" ", "_") + file_extension
 
-    Args:
-        uploaded_file: The file uploaded by the user in Streamlit.
+    # Step 2: Define the file path to save
+    save_path = os.path.join(UPLOAD_FOLDER, transformed_file_name)
 
-    Returns:
-        str: The file path where the uploaded file is saved.
-    """
-    file_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    return file_path
+    # Step 3: Save the file
+    with open(save_path, "wb") as f:
+        f.write(uploaded_file.read())
+
+    return save_path
